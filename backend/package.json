@@ -2,6 +2,7 @@
   "name": "habits-backend",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@12.15.0",
   "scripts": {
     "dev": "wrangler d1 migrations apply habits --local && pnpm --dir ../frontend build && wrangler dev",
     "release": "wrangler d1 migrations apply habits --remote && pnpm --dir ../frontend build && wrangler deploy",
