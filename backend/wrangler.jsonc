@@ -18,7 +18,7 @@
       "database_name": "habits",
       // Replace with the id `pnpm wrangler d1 create habits` prints. (This
       // placeholder is fine for running locally.)
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "f1296a7d-2cc6-4b04-bd30-e3ae100e33a5",
       "migrations_dir": "migrations"
     }
   ],
