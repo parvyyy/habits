@@ -1,0 +1,156 @@
+@import 'tailwindcss';
+
+/* Same look as the board games site: paper, pencil and marker colours. */
+@theme {
+  --color-paper: #f6efe4;
+  --color-card: #fffaf0;
+  --color-ink: #151515;
+  --color-pencil: #5f5b55;
+
+  /* Marker colours, one per habit. They're used see-through (see styles.ts),
+     so on paper they come out as soft pastels. */
+  --color-blue: #1b2be8;
+  --color-orange: #f76707;
+  --color-violet: #7048e8;
+  --color-pink: #d6336c;
+  --color-green: #2f9e44;
+  --color-cyan: #1098ad;
+  --color-coral: #f03e3e;
+
+  --font-hand: 'Patrick Hand', 'Comic Sans MS', cursive;
+  --font-pen: 'Caveat Brush', cursive;
+
+  /* Uneven corners that make a box look hand-cut. */
+  --radius-wobbly: 6px 14px 5px 18px / 16px 5px 14px 6px;
+  --radius-wobbly-sm: 5px 7px 4px 6px;
+
+  /* A hard offset shadow, like paper lifted off the page. */
+  --shadow-card: 3px 4px 0 --alpha(var(--color-ink) / 8%);
+
+  --animate-scribble-in: scribble-in 0.22s ease-out;
+
+  /* Text being jotted down: fades in while settling from a slight tilt. */
+  @keyframes scribble-in {
+    from {
+      opacity: 0;
+      translate: 0 6px;
+      rotate: -1.5deg;
+    }
+  }
+
+  /* Holding a day down: its next colour rises up from the bottom. The
+     duration is set where it's used, to match how long the hold takes. */
+  --animate-hold-fill: hold-fill linear forwards;
+
+  @keyframes hold-fill {
+    from {
+      clip-path: inset(100% 0 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+
+  /* The level line on top of that rising colour, so the hold reads clearly
+     even when the next shade is close to the current one. */
+  --animate-hold-line: hold-line linear forwards;
+
+  @keyframes hold-line {
+    from {
+      bottom: 0;
+    }
+    to {
+      bottom: calc(100% - 2px);
+    }
+  }
+
+  /* A day that's just changed: springs up big, then settles. */
+  --animate-pop: pop 0.4s ease-out;
+
+  @keyframes pop {
+    0% {
+      scale: 0.85;
+    }
+    40% {
+      scale: 1.35;
+    }
+    70% {
+      scale: 0.95;
+    }
+    100% {
+      scale: 1;
+    }
+  }
+
+  /* A quick no: shaken side to side, e.g. after a wrong key. */
+  --animate-shake: shake 0.35s ease-in-out;
+
+  @keyframes shake {
+    20%,
+    60% {
+      translate: -5px 0;
+    }
+    40%,
+    80% {
+      translate: 5px 0;
+    }
+  }
+
+  /* A tick being drawn, for an SVG path with pathLength="1". */
+  --animate-draw: draw 0.25s ease-out forwards;
+
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* A line being struck through text, from left to right. */
+  --animate-strike: strike 0.3s ease-out;
+
+  @keyframes strike {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0);
+    }
+  }
+
+  /* An outline that spreads out from a day that's just changed, and fades. */
+  --animate-ripple: ripple 0.5s ease-out forwards;
+
+  @keyframes ripple {
+    from {
+      scale: 1;
+      opacity: 0.7;
+    }
+    to {
+      scale: 2;
+      opacity: 0;
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-paper font-hand text-xl/tight text-ink antialiased;
+
+    /* Faint isometric dot grid: dots 24px apart, with every other row
+       shifted by half a step (row height is 24px * sqrt(3) / 2). */
+    --dot: radial-gradient(circle, --alpha(var(--color-ink) / 13%) 1px, transparent 1.5px);
+    background-image: var(--dot), var(--dot);
+    background-size: 24px 41.57px;
+    background-position: 0 0, 12px 20.78px;
+  }
+}
+
+/* A slightly wavy pencil line, used as a mask: give the element a height
+   and a background colour. */
+@utility wavy-line {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 8' preserveAspectRatio='none'%3E%3Cpath d='M-4 4.2C200 5.6 420 2.6 700 4.4S1180 5.4 1444 3.4' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+}

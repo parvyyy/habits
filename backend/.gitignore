@@ -1,0 +1,8 @@
+node_modules
+# Wrangler's local copy of the database, and its build files.
+.wrangler
+# Local secrets (HABITS_KEY for `wrangler dev`).
+.dev.vars
+# Old file-based data, and SQL made from it by scripts/import.ts.
+data.json
+import.sql

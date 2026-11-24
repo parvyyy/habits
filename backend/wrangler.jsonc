@@ -1,0 +1,26 @@
+// Cloudflare deploy settings. One Worker serves the built page
+// (../frontend/dist) and answers /api with src/worker.ts, keeping everything
+// in a D1 database. `pnpm run deploy` builds the page and deploys both.
+{
+  "name": "habits",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "../frontend/dist",
+    // The page is one screen, so any other path serves it too.
+    "not_found_handling": "single-page-application",
+    // /api always goes to the Worker, never to the page.
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "habits",
+      // Replace with the id `pnpm wrangler d1 create habits` prints. (This
+      // placeholder is fine for running locally.)
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true }
+}

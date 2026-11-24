@@ -1,0 +1,16 @@
+{
+  "name": "habits-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler d1 migrations apply habits --local && pnpm --dir ../frontend build && wrangler dev",
+    "release": "wrangler d1 migrations apply habits --remote && pnpm --dir ../frontend build && wrangler deploy",
+    "test": "node --test test/*.test.ts",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "~6.0.3",
+    "wrangler": "~4.166.0"
+  }
+}
