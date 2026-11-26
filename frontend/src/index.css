@@ -154,3 +154,59 @@
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 8' preserveAspectRatio='none'%3E%3Cpath d='M-4 4.2C200 5.6 420 2.6 700 4.4S1180 5.4 1444 3.4' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E")
     center / 100% 100% no-repeat;
 }
+
+/* Text that scrolls sideways when it doesn't fit, with no scrollbar. Where
+   the browser can tie an animation to scrolling, the edges with more text
+   past them fade out, so it's clear there's more to see. */
+@property --fade-left {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-right {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes scroll-fade {
+  from {
+    --fade-left: 0px;
+    --fade-right: 1.5rem;
+  }
+  15% {
+    --fade-left: 1.5rem;
+  }
+  85% {
+    --fade-right: 1.5rem;
+  }
+  to {
+    --fade-left: 1.5rem;
+    --fade-right: 0px;
+  }
+}
+
+@utility scroll-fade {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 var(--fade-left),
+    #000 calc(100% - var(--fade-right)),
+    transparent
+  );
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Only when it doesn't fit is there a scroll for the animation to follow;
+     otherwise both fades stay at nothing. */
+  @supports (animation-timeline: scroll()) {
+    animation: scroll-fade linear both;
+    animation-timeline: scroll(self inline);
+  }
+}

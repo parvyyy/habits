@@ -18,7 +18,9 @@ type Props = {
 // A to-do list written straight onto the page. Enter on a line with
 // something in it adds a new line below; Backspace on an empty line removes
 // it. Ticking a line's circle strikes it through (and makes it read-only
-// until it's unticked); right-clicking a ticked line removes it.
+// until it's unticked). Hovering a line shows a bin on its right that
+// removes it, and Ctrl+Z (or Cmd+Z) puts binned lines back, latest first.
+// A line too long to fit can be scrolled sideways.
 //
 // Lines can be dragged into a new order by the grip that shows on their left
 // when hovered, or moved with Alt+Up / Alt+Down while typing in one.
@@ -29,6 +31,7 @@ function TodoList({ todos, onChange }: Props) {
   const rows = useRef(new Map<string, HTMLLIElement>())
   const inputs = useRef(new Map<string, HTMLInputElement>())
   const tops = useRef(new Map<string, number>()) // where each line was last drawn
+  const binned = useRef<{ todo: Todo; at: number }[]>([]) // lines put in the bin, and where they were, latest last
 
   // When lines change places, slide each from where it was to where it is
   // now, rather than jumping.
@@ -47,11 +50,38 @@ function TodoList({ todos, onChange }: Props) {
   const update = (id: string, change: Partial<Todo>) =>
     onChange(todos.map((todo) => (todo.id === id ? { ...todo, ...change } : todo)))
 
-  // Takes a line off the list, leaving a blank one if it was the last.
+  // Takes a line off the list, leaving a blank one if it was the last, and
+  // keeps it so it can be put back (unless there was nothing written on it).
   function remove(id: string) {
+    const at = todos.findIndex((todo) => todo.id === id)
+    if (at === -1) return
+    if (todos[at].text.trim()) binned.current.push({ todo: todos[at], at })
     const rest = todos.filter((todo) => todo.id !== id)
     onChange(rest.length ? rest : [blankTodo()])
   }
+
+  // Ctrl+Z (or Cmd+Z) puts the last binned line back where it was. While
+  // typing in a line, the system's own undo shortcut is left alone, to undo
+  // the typing.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== 'z' || event.shiftKey || event.altKey || !(event.ctrlKey || event.metaKey)) return
+      const mac = /Mac|iPhone|iPad/.test(navigator.platform)
+      const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement
+      if (typing && (mac ? event.metaKey : event.ctrlKey)) return
+      const last = binned.current.pop()
+      if (!last) return
+      event.preventDefault()
+      // The blank line left when the last one was binned gives way to it.
+      const lone = todos.length === 1 && !todos[0].text.trim()
+      const rest = lone ? [] : todos
+      const at = Math.min(last.at, rest.length)
+      onChange([...rest.slice(0, at), last.todo, ...rest.slice(at)])
+      setAdded(last.todo.id) // an unticked line gets the cursor back
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [todos, onChange])
 
   // While dragging, the line takes whichever place is nearest the pointer.
   // This listens on the whole window: the line is moved around the page as
@@ -81,6 +111,30 @@ function TodoList({ todos, onChange }: Props) {
     }
   }, [dragging, todos, onChange])
 
+  // Browsers only scroll a text box sideways while it's being typed in, so a
+  // long line that isn't would stay cut off. This scrolls any line's text box
+  // on a sideways swipe (or Shift + wheel), like the ticked lines. It listens
+  // on the list itself because React's wheel listener can't stop the page (or
+  // a swipe back through history) from moving too.
+  useEffect(() => {
+    const ul = list.current
+    if (!ul) return
+    const onWheel = (event: WheelEvent) => {
+      const input = event.target
+      if (!(input instanceof HTMLInputElement)) return
+      const sideways = event.deltaX || (event.shiftKey ? event.deltaY : 0)
+      if (!sideways || Math.abs(event.deltaY) > Math.abs(sideways)) return // mostly up or down: scroll the page
+      const by = sideways * (event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 20 : 1)
+      const end = input.scrollWidth - input.clientWidth
+      const next = Math.max(0, Math.min(end, input.scrollLeft + by))
+      if (next === input.scrollLeft) return // already at that end
+      event.preventDefault()
+      input.scrollLeft = next
+    }
+    ul.addEventListener('wheel', onWheel, { passive: false })
+    return () => ul.removeEventListener('wheel', onWheel)
+  }, [])
+
   function onKeyDown(event: React.KeyboardEvent<HTMLInputElement>, todo: Todo, i: number) {
     if (event.key === 'Enter' && todo.text.trim()) {
       event.preventDefault()
@@ -108,11 +162,6 @@ function TodoList({ todos, onChange }: Props) {
           ref={(el) => {
             if (el) rows.current.set(todo.id, el)
             else rows.current.delete(todo.id)
-          }}
-          onContextMenu={(event) => {
-            if (!todo.done) return // an unticked line keeps the usual menu, for editing its text
-            event.preventDefault()
-            remove(todo.id)
           }}
           // The line being dragged is lifted off the page, like a slip of
           // paper (drawn behind it, a little bigger, so nothing inside moves).
@@ -156,9 +205,13 @@ function TodoList({ todos, onChange }: Props) {
           </button>
 
           {todo.done ? (
-            <span title={todo.text} className="relative min-w-0 truncate pt-0.5 text-xl/7 text-pencil">
-              {todo.text}
-              <span className="wavy-line absolute inset-x-0 top-1/2 h-1.5 animate-strike bg-ink/70 motion-reduce:animate-none" />
+            // Scrolls sideways if it's too long; the strike is drawn across the
+            // inner span so it covers all of the text, not just what's showing.
+            <span title={todo.text} className="scroll-fade flex min-w-0 text-xl/7 text-pencil">
+              <span className="relative shrink-0 whitespace-nowrap pt-0.5">
+                {todo.text}
+                <span className="wavy-line absolute inset-x-0 top-1/2 h-1.5 animate-strike bg-ink/70 motion-reduce:animate-none" />
+              </span>
             </span>
           ) : (
             <input
@@ -175,6 +228,20 @@ function TodoList({ todos, onChange }: Props) {
               spellCheck={false}
               className="min-w-0 flex-1 bg-transparent pt-0.5 text-xl/7 outline-none placeholder:text-pencil/50"
             />
+          )}
+
+          {/* Nothing to remove from a list that's just one blank line. */}
+          {(todo.text || todos.length > 1) && (
+            <button
+              type="button"
+              aria-label={todo.text ? `Remove ${todo.text}` : 'Remove this line'}
+              onClick={() => remove(todo.id)}
+              className="ml-auto flex h-7 w-5 shrink-0 cursor-pointer items-center justify-center text-pencil opacity-0 transition group-hover:opacity-60 hover:text-coral hover:opacity-100! focus-visible:opacity-100 [@media(hover:none)]:opacity-40"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 fill-none stroke-current stroke-[1.5]" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 4.2 L14 3.8 M6 4 V2.5 H10 V4 M3.5 4.5 L4.6 14 H11.4 L12.5 4.5 M6.5 7 V11.5 M9.5 7 V11.5" />
+              </svg>
+            </button>
           )}
         </li>
       ))}

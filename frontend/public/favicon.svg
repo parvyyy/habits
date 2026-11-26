@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="184 184 656 656" width="64" height="64">
+  <defs>
+    <!-- A day box from the calendars (uneven corners, like the page's), half
+         filled with water: a habit midway through being done. -->
+    <path id="box" d="M300 212 H690 A122 122 0 0 1 812 334 V742 A70 70 0 0 1 742 812 H317 A105 105 0 0 1 212 707 V300 A88 88 0 0 1 300 212 Z"/>
+    <clipPath id="inside"><use href="#box"/></clipPath>
+  </defs>
+  <use href="#box" fill="#ffffff"/>
+  <g clip-path="url(#inside)">
+    <path d="M50 492 Q140 452 230 492 T410 492 T590 492 T770 492 T950 492 V900 H50 Z" fill="#1b2be8" fill-opacity="0.18"/>
+    <path d="M140 535 Q230 487 320 535 T500 535 T680 535 T860 535 V900 H140 Z" fill="#1b2be8" fill-opacity="0.42"/>
+    <path d="M140 535 Q230 487 320 535 T500 535 T680 535 T860 535" fill="none" stroke="#1b2be8" stroke-opacity="0.75" stroke-width="22" stroke-linecap="round"/>
+  </g>
+  <use href="#box" fill="none" stroke="#151515" stroke-width="52" stroke-linejoin="round"/>
+</svg>
