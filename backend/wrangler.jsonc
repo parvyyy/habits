@@ -1,6 +1,6 @@
 // Cloudflare deploy settings. One Worker serves the built page
 // (../frontend/dist) and answers /api with src/worker.ts, keeping everything
-// in a D1 database. `pnpm run deploy` builds the page and deploys both.
+// in a D1 database. `pnpm release` builds the page and deploys both.
 {
   "name": "habits",
   "main": "src/worker.ts",
